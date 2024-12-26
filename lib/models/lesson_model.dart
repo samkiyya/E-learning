@@ -11,7 +11,7 @@ class Lesson extends HiveObject {
   final String title;
 
   @HiveField(2)
-  final String sectionId;
+  final int sectionId;
 
   @HiveField(3)
   final String videoUrl;

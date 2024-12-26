@@ -4,8 +4,10 @@ import 'package:e_learning/screens/course_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp( MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CourseProvider.setupHive();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -1,19 +1,30 @@
+import 'package:e_learning/widgets/course_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/course_providers.dart';
-import './course_detail_screen.dart';
 
 class CourseListScreen extends StatefulWidget {
+  const CourseListScreen({super.key});
+
   @override
-  _CourseListScreenState createState() => _CourseListScreenState();
+  State<CourseListScreen> createState() => _CourseListScreenState();
 }
 
 class _CourseListScreenState extends State<CourseListScreen> {
+  late Future<void> _fetchCoursesFuture;
+
   @override
   void initState() {
     super.initState();
-    // Initialize Hive in the initState to set it up before fetching data
-    Future.microtask(() => Provider.of<CourseProvider>(context, listen: false).setupHive());
+    _fetchCoursesFuture = _fetchCourses();
+  }
+
+  Future<void> _fetchCourses() async {
+    try {
+      await Provider.of<CourseProvider>(context, listen: false).fetchCourses();
+    } catch (error) {
+      print('Error fetching courses: $error');
+    }
   }
 
   @override
@@ -25,12 +36,13 @@ class _CourseListScreenState extends State<CourseListScreen> {
         title: Text('Courses'),
       ),
       body: FutureBuilder(
-        future: courseProvider.fetchCourses(),
+        future: _fetchCoursesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error loading courses: ${snapshot.error}'));
+            return Center(
+                child: Text('Error loading courses: ${snapshot.error}'));
           } else {
             if (courseProvider.courses.isEmpty) {
               return Center(child: Text('No courses available.'));
@@ -40,18 +52,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
               itemCount: courseProvider.courses.length,
               itemBuilder: (context, index) {
                 final course = courseProvider.courses[index];
-                return ListTile(
-                  title: Text(course.title),
-                  subtitle: Text(course.language),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CourseDetailScreen(courseId: course.id),
-                      ),
-                    );
-                  },
-                );
+                return CourseCard(course: course);
               },
             );
           }

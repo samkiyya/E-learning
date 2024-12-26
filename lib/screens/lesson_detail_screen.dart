@@ -6,10 +6,11 @@ import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 
 class LessonDetailScreen extends StatelessWidget {
-  final String lessonId;
+  final int lessonId;
   final Uri videoUrl;
 
-  LessonDetailScreen({required this.lessonId, required this.videoUrl});
+  const LessonDetailScreen(
+      {super.key, required this.lessonId, required this.videoUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,7 @@ class LessonDetailScreen extends StatelessWidget {
         title: Text('Lesson Details'),
       ),
       body: FutureBuilder<bool>(
-        future: lessonProvider.isLessonDownloaded(lessonId),
+        future: lessonProvider.isLessonDownloaded(lessonId.toString()),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -31,7 +32,8 @@ class LessonDetailScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: isDownloaded
-                      ? OfflineVideoPlayer(filePath: lessonProvider.getLessonPath(lessonId)!)
+                      ? OfflineVideoPlayer(
+                          filePath: lessonProvider.getLessonPath(lessonId.toString())!)
                       : OnlineVideoPlayer(videoUrl: videoUrl),
                 ),
                 Padding(
@@ -43,12 +45,16 @@ class LessonDetailScreen extends StatelessWidget {
                           },
                           child: Text('Play Offline'),
                         )
-                      : ElevatedButton(
-                          onPressed: () {
-                            lessonProvider.downloadLesson(lessonId, videoUrl);
-                          },
-                          child: Text('Download Lesson'),
-                        ),
+                      : lessonProvider.downloadProgress.containsKey(lessonId) &&
+                              lessonProvider.downloadProgress[lessonId]! < 1.0
+                          ? DownloadProgressIndicator(lessonId: lessonId.toString())
+                          : ElevatedButton(
+                              onPressed: () {
+                                lessonProvider.downloadLesson(
+                                    lessonId.toString(), videoUrl);
+                              },
+                              child: Text('Download Lesson'),
+                            ),
                 ),
               ],
             );
@@ -59,10 +65,29 @@ class LessonDetailScreen extends StatelessWidget {
   }
 }
 
+class DownloadProgressIndicator extends StatelessWidget {
+  final String lessonId;
+
+  const DownloadProgressIndicator({super.key, required this.lessonId});
+
+  @override
+  Widget build(BuildContext context) {
+    final lessonProvider = Provider.of<LessonProvider>(context);
+    final progress = lessonProvider.downloadProgress[lessonId] ?? 0.0;
+
+    return Column(
+      children: [
+        CircularProgressIndicator(value: progress),
+        Text('${(progress * 100).toStringAsFixed(0)}%'),
+      ],
+    );
+  }
+}
+
 class OfflineVideoPlayer extends StatelessWidget {
   final String filePath;
 
-  OfflineVideoPlayer({required this.filePath});
+  const OfflineVideoPlayer({super.key, required this.filePath});
 
   @override
   Widget build(BuildContext context) {

@@ -1,47 +1,54 @@
 import 'package:e_learning/providers/course_providers.dart';
+import 'package:e_learning/widgets/lesson_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './lesson_detail_screen.dart';
+import 'package:e_learning/providers/lesson_provider.dart';
 
 class SectionDetailScreen extends StatelessWidget {
   final int sectionId;
 
-  SectionDetailScreen({required this.sectionId});
+  const SectionDetailScreen({super.key, required this.sectionId});
 
   @override
   Widget build(BuildContext context) {
     final courseProvider = Provider.of<CourseProvider>(context);
+    final lessonProvider = Provider.of<LessonProvider>(context);
+
+    // Fetch lessons if they are not already fetched
+    Future<void> fetchLessonsIfNeeded() async {
+      if (courseProvider.lessons.isEmpty) {
+        await courseProvider.fetchLessons(sectionId);
+      }
+    }
+
+    // Trigger fetching lessons when the widget is built
+    fetchLessonsIfNeeded();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Section Details'),
       ),
-      body: FutureBuilder(
-        future: courseProvider.fetchLessons(sectionId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Consumer<CourseProvider>(
+        builder: (context, provider, child) {
+          // If lessons are still loading
+          if (provider.lessons.isEmpty) {
             return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error loading lessons'));
-          } else {
-            return ListView.builder(
-              itemCount: courseProvider.lessons.length,
-              itemBuilder: (context, index) {
-                final lesson = courseProvider.lessons[index];
-                return ListTile(
-                  title: Text(lesson.title),
-                  trailing: IconButton(
-                    icon: Icon(Icons.download),
-                    onPressed: () {
-                      // Download or play offline logic goes here
-                    },
-                  ),
-                  onTap: () {
-                    // Video play logic
-                  },
-                );
-              },
-            );
           }
+
+          // If there is an error while fetching lessons
+          if (provider.lessons.isEmpty) {
+            return Center(child: Text('Error loading lessons'));
+          }
+
+          // Display the lessons once fetched
+          return ListView.builder(
+            itemCount: provider.lessons.length,
+            itemBuilder: (context, index) {
+              final lesson = provider.lessons[index];
+              return LessonCard(lesson: lesson);
+            },
+          );
         },
       ),
     );

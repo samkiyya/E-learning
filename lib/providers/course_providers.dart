@@ -16,11 +16,20 @@ class CourseProvider with ChangeNotifier {
   List<Lesson> get lessons => _lessons;
 
   // Set up Hive and register adapters
-  Future<void> setupHive() async {
+  static Future<void> setupHive() async {
     await Hive.initFlutter();
-    Hive.registerAdapter(CourseAdapter());
-    Hive.registerAdapter(SectionAdapter());
-    Hive.registerAdapter(LessonAdapter());
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(CourseAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(SectionAdapter());
+    }
+    if (!Hive.isAdapterRegistered(3)) {
+      Hive.registerAdapter(LessonAdapter());
+    }
+    if (!Hive.isAdapterRegistered(4)) {
+      Hive.registerAdapter(CategoryAdapter());
+    }
   }
 
   // Fetch courses from API or Hive
@@ -37,7 +46,7 @@ class CourseProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         _courses = (data as List).map((item) => Course.fromJson(item)).toList();
-
+        print('course: $_courses');
         // Save to Hive for offline usage
         for (var course in _courses) {
           await courseBox.put(course.id, course);
@@ -52,8 +61,9 @@ class CourseProvider with ChangeNotifier {
 
   // Fetch sections from API
   Future<void> fetchSections(int courseId) async {
+    //'https://backend.biomedicalhorizonnetwork.com/api/section/$courseId'
     final response = await http.get(Uri.parse(
-        'https://backend.biomedicalhorizonnetwork.com/api/section/$courseId'));
+        'https://backend.biomedicalhorizonnetwork.com/api/section'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       _sections = (data as List).map((item) => Section.fromJson(item)).toList();
@@ -65,8 +75,9 @@ class CourseProvider with ChangeNotifier {
 
   // Fetch lessons from API
   Future<void> fetchLessons(int sectionId) async {
+    //https://backend.biomedicalhorizonnetwork.com/api/lesson/$sectionId
     final response = await http.get(Uri.parse(
-        'https://backend.biomedicalhorizonnetwork.com/api/lesson/$sectionId'));
+        'https://backend.biomedicalhorizonnetwork.com/api/lesson'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       _lessons = (data as List).map((item) => Lesson.fromJson(item)).toList();

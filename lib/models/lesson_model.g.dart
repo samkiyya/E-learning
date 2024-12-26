@@ -19,7 +19,7 @@ class LessonAdapter extends TypeAdapter<Lesson> {
     return Lesson(
       id: fields[0] as int,
       title: fields[1] as String,
-      sectionId: fields[2] as String,
+      sectionId: fields[2] as int,
       videoUrl: fields[3] as String,
       attachment: fields[4] as String,
       banner: fields[5] as String,
